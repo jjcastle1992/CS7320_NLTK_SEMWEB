@@ -14,67 +14,96 @@ def read_file(file_name):
         return []
 
 
-def clean_text(text_to_clean):
+def clean_text(text_to_clean, rem_punc=True, lower=True, rem_sw=True):
     """
     Cleans given strings of text by:
      1. Removing punctuation
      2. Setting text to all lower case.
      3. Tokenizes into words
      4. Removes stopwords using nltk list
-    :param text_to_clean: a string of text.
+    :param text_to_clean: a string of text
+    :param rem_punc: Bool where True removes punctuation
+    :param lower: Bool where True sets punctuation to lowercase
+    :param rem_sw: Bool where True removes stopwords (English)
     :return: string of cleaned text
     """
     # remove punctuation
-    no_punct_re = r'[^\w\s]'
-    text_without_punct = re.sub(no_punct_re, '', text_to_clean)
+    if(rem_punc):
+        no_punct_re = r'[^\w\s]'
+        text_to_clean = re.sub(no_punct_re, '', text_to_clean)
 
     # set text to lowercase
-    lower_text = text_without_punct.lower()
+    if(lower):
+        text_to_clean = text_to_clean.lower()
 
     # tokenize text into words
-    lower_tokens = nltk.word_tokenize(lower_text)
+    tokens = nltk.word_tokenize(text_to_clean)
 
     # remove stopwords
-    stop_words = stopwords.words('english')
-
-    ftr_tkns = [word for word in lower_tokens if word not in stop_words]
+    if(rem_sw):
+        stop_words = stopwords.words('english')
+        tokens = [word for word in tokens if word not in stop_words]
 
     # concat back into one big string
-    cleaned_text = ' '.join(ftr_tkns)
+    cleaned_text = ' '.join(tokens)
 
     # return cleaned string
     return cleaned_text
 
 
-def tokenize_file_sentences(file_name):
-    try:
-        with open(file_name, 'r') as file:
-            text = file.read()
-            sentences = nltk.sent_tokenize(text)
-            return sentences
+def named_entity_extractor(entities, num_words):
+    named_entities = []
 
-    except FileNotFoundError:
-        return []
+    for idx in range(num_words):
+        print(entities[idx], '\t', type(entities[idx]))
+        if(isinstance(entities[idx], nltk.Tree)):
+            named_entities.append(entities[idx].label())
 
-    finally:
-        file.close()
+    return named_entities
+
+
+def entity_of_interest(entities, size):
+    """takes in a list of entities, checks to see if the first item is a
+    person, and that the entity list is only of .
+    :param entities: list of entities
+    :param size: int - determines the size of the list we're looking for
+    returns: True if entity meets condition. False if not
+    """
 
 
 
 def main():
+    nltk.download('words')
     file_name = 'hw4.facts.txt'
     our_text = read_file(file_name)
     print(our_text)
     raw_sentences = nltk.sent_tokenize(our_text)
-    cleaned_setences = []
-    for sentence in raw_sentences:
-        cleaned_sent = clean_text(sentence)
-        cleaned_setences.append(cleaned_sent)
-    # sentences = tokenize_file_sentences(file_name)
-    # print(sentences)
-    print('CLEANED SENTENCES\n')
-    print(cleaned_setences)
-    # words = [nltk.word_tokenize(sentence) for sentence in sentences]
-    # print(words)
+
+    # Set to send clean or raw sentences
+    clean = True
+    no_punct = True
+    lowercase = False
+    rem_stopwords = False
+    if (clean):
+        cleaned_sentences = []
+        for sentence in raw_sentences:
+            cleaned_sent = clean_text(sentence, no_punct, lowercase,
+                                      rem_stopwords)
+            cleaned_sentences.append(cleaned_sent)
+
+    # NER
+    sentences_of_interest = []
+    entity_size = 2
+
+    if(clean):
+        for sentences in cleaned_sentences:
+            tokens = nltk.word_tokenize(sentences)
+            entities = nltk.ne_chunk(nltk.pos_tag(tokens))
+            entity_types = named_entity_extractor(entities, len(tokens))
+            print(entity_types)
+
+
+
+
 
 main()

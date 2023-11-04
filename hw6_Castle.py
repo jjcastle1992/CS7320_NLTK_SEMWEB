@@ -55,7 +55,7 @@ def named_entity_extractor(entities, num_words):
     named_entities = []
 
     for idx in range(num_words):
-        print(entities[idx], '\t', type(entities[idx]))
+        # print(entities[idx], '\t', type(entities[idx]))
         if(isinstance(entities[idx], nltk.Tree)):
             named_entities.append(entities[idx].label())
 
@@ -73,10 +73,10 @@ def entity_of_interest(entities, size):
 
 
 def main():
-    nltk.download('words')
+    # nltk.download('words')
     file_name = 'hw4.facts.txt'
     our_text = read_file(file_name)
-    print(our_text)
+    # print(our_text)
     raw_sentences = nltk.sent_tokenize(our_text)
 
     # Set to send clean or raw sentences
@@ -102,7 +102,15 @@ def main():
             entity_types = named_entity_extractor(entities, len(tokens))
             print(entity_types)
 
+            # Check to see if entity_types starts with person and has 2
+            # values.
+            if(len(entity_types) == 2 and entity_types[0] == 'PERSON'):
+                print('We got em')
+                print(entity_types)
+                print(sentences)
+                sentences_of_interest.append(sentences)
 
+    print(sentences_of_interest)
 
 
 

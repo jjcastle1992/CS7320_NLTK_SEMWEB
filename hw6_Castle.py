@@ -87,8 +87,25 @@ def get_phrase_of_interest(sent_interest, name_type_pairs, ner_tags):
     :param sent_interest: list of str sentences of interest
     :param name_type_pairs:list tuples of name, POS pairs
     :param ner_tags: list of NER tags
-    returns: True if entity meets condition. False if not
+    returns: a list of short phrases
     """
+    short_phrases = []
+
+    for idx, sentences in enumerate(sent_interest):
+        # determine our start and end words
+        start_name = name_type_pairs[idx][0][1]
+        end_name = name_type_pairs[idx][1][1]
+
+        # regex to find the short phrases incl start and end names
+        pattern = re.escape(start_name) + r'(.*?)' + re.escape(end_name)
+        match = re.search(pattern, sentences)
+        if (match):
+            target_phrase = start_name + match.group(1) + end_name
+            # print(target_phrase)
+            # append short_phrases with target phrase
+            short_phrases.append(target_phrase)
+
+    return short_phrases
 
 
 
@@ -121,9 +138,8 @@ def main():
             tokens = nltk.word_tokenize(sentences)
             entities = nltk.ne_chunk(nltk.pos_tag(tokens))
             entity_list.append(entities)
-            entity_types, names = named_entity_extractor(entities, len(tokens))
-            print(entity_types)
-            print(names)
+            entity_types, names = named_entity_extractor(entities,
+                                                         len(tokens))
 
             # merge entity types and names into a list
             name_type_pairs = list(zip(entity_types, names))
@@ -135,7 +151,12 @@ def main():
                 name_type_pairs_interest.append(name_type_pairs)
                 entity_interest.append(entity_types)
 
-    print(sentences_of_interest)
+    short_phrases = get_phrase_of_interest(sentences_of_interest,
+                                           name_type_pairs_interest,
+                                           entity_interest)
+
+    print(short_phrases)
+
     write_file('entity_data.csv', entity_list)
 
 

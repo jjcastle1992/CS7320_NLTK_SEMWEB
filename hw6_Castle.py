@@ -1,3 +1,6 @@
+import csv
+import filecmp
+
 import nltk
 from nltk.corpus import stopwords
 import re
@@ -12,6 +15,19 @@ def read_file(file_name):
 
     except FileNotFoundError:
         return []
+
+def write_file(file_name, data_source):
+    with open (file_name, mode='w', newline='') as csv_file:
+        csv_writer = csv.writer(csv_file)
+
+        # write headers
+        csv_writer.writerow(['Entity'])
+
+        # write entities
+        for data in data_source:
+            csv_writer.writerow(data)
+        print('file written')
+        csv_file.close()
 
 
 def clean_text(text_to_clean, rem_punc=True, lower=True, rem_sw=True):
@@ -94,11 +110,12 @@ def main():
     # NER
     sentences_of_interest = []
     entity_size = 2
-
+    entity_list = []  # for debugging
     if(clean):
         for sentences in cleaned_sentences:
             tokens = nltk.word_tokenize(sentences)
             entities = nltk.ne_chunk(nltk.pos_tag(tokens))
+            entity_list.append(entities)
             entity_types = named_entity_extractor(entities, len(tokens))
             print(entity_types)
 
@@ -111,6 +128,7 @@ def main():
                 sentences_of_interest.append(sentences)
 
     print(sentences_of_interest)
+    write_file('entity_data.csv', entity_list)
 
 
 

@@ -69,20 +69,24 @@ def clean_text(text_to_clean, rem_punc=True, lower=True, rem_sw=True):
 
 def named_entity_extractor(entities, num_words):
     named_entities = []
+    names = []
 
     for idx in range(num_words):
         # print(entities[idx], '\t', type(entities[idx]))
         if(isinstance(entities[idx], nltk.Tree)):
             named_entities.append(entities[idx].label())
+            names.append(entities[idx][0][0])
 
-    return named_entities
+    return named_entities, names
 
 
-def entity_of_interest(entities, size):
-    """takes in a list of entities, checks to see if the first item is a
-    person, and that the entity list is only of .
-    :param entities: list of entities
-    :param size: int - determines the size of the list we're looking for
+def get_phrase_of_interest(sent_interest, name_type_pairs, ner_tags):
+    """takes in a list of sentences of interest, list of entities of
+    interest, and NER tags to find and uses regex to extract the phrase
+    of interest.
+    :param sent_interest: list of str sentences of interest
+    :param name_type_pairs:list tuples of name, POS pairs
+    :param ner_tags: list of NER tags
     returns: True if entity meets condition. False if not
     """
 
@@ -109,23 +113,27 @@ def main():
 
     # NER
     sentences_of_interest = []
-    entity_size = 2
+    entity_interest = []
+    name_type_pairs_interest = []
     entity_list = []  # for debugging
     if(clean):
         for sentences in cleaned_sentences:
             tokens = nltk.word_tokenize(sentences)
             entities = nltk.ne_chunk(nltk.pos_tag(tokens))
             entity_list.append(entities)
-            entity_types = named_entity_extractor(entities, len(tokens))
+            entity_types, names = named_entity_extractor(entities, len(tokens))
             print(entity_types)
+            print(names)
+
+            # merge entity types and names into a list
+            name_type_pairs = list(zip(entity_types, names))
 
             # Check to see if entity_types starts with person and has 2
             # values.
             if(len(entity_types) == 2 and entity_types[0] == 'PERSON'):
-                print('We got em')
-                print(entity_types)
-                print(sentences)
                 sentences_of_interest.append(sentences)
+                name_type_pairs_interest.append(name_type_pairs)
+                entity_interest.append(entity_types)
 
     print(sentences_of_interest)
     write_file('entity_data.csv', entity_list)

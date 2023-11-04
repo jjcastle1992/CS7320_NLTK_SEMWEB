@@ -80,16 +80,16 @@ def named_entity_extractor(entities, num_words):
     return named_entities, names
 
 
-def get_phrase_of_interest(sent_interest, name_type_pairs, ner_tags):
-    """takes in a list of sentences of interest, list of entities of
-    interest, and NER tags to find and uses regex to extract the phrase
+def get_phrase_interest(sent_interest, name_type_pairs):
+    """takes in a list of sentences of interest and list of entities of
+    interest to find and uses regex to extract the phrase
     of interest.
     :param sent_interest: list of str sentences of interest
     :param name_type_pairs:list tuples of name, POS pairs
-    :param ner_tags: list of NER tags
-    returns: a list of short phrases
+    returns: a list of short phrases and a list of substitution terms
     """
     short_phrases = []
+    sub_terms = []
 
     for idx, sentences in enumerate(sent_interest):
         # determine our start and end words
@@ -101,11 +101,15 @@ def get_phrase_of_interest(sent_interest, name_type_pairs, ner_tags):
         match = re.search(pattern, sentences)
         if (match):
             target_phrase = start_name + match.group(1) + end_name
+            sub_phrase = match.group(1)
+            sub_phrase = sub_phrase.strip()
             # print(target_phrase)
-            # append short_phrases with target phrase
+            # append short_phrases with target phrase and sub_terms
+            # with sub_phrases
             short_phrases.append(target_phrase)
+            sub_terms.append(sub_phrase)
 
-    return short_phrases
+    return short_phrases, sub_terms
 
 
 
@@ -151,13 +155,15 @@ def main():
                 name_type_pairs_interest.append(name_type_pairs)
                 entity_interest.append(entity_types)
 
-    short_phrases = get_phrase_of_interest(sentences_of_interest,
-                                           name_type_pairs_interest,
-                                           entity_interest)
+    short_phrases, subs = get_phrase_interest(sentences_of_interest,
+                                              name_type_pairs_interest)
 
     print(short_phrases)
 
-    write_file('entity_data.csv', entity_list)
+    # write foaf/schema dict for subs
+    print(subs)
+
+    # write_file('entity_data.csv', entity_list)
 
 
 

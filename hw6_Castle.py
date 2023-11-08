@@ -5,6 +5,9 @@ import nltk
 from nltk.corpus import stopwords
 import re
 # import spacy
+from rdflib import Graph, Literal, URIRef, Namespace
+from rdflib.namespace import FOAF, RDF
+
 
 def read_file(file_name):
     try:
@@ -161,8 +164,34 @@ def main():
     print(short_phrases)
 
     # write foaf/schema dict for subs
+    SCHEMA = Namespace("https://schema.org/worksFor")
     print(subs)
+    foaf_schema_mapping = {'knows': FOAF.knows,
+                           'talks to': FOAF.knows,
+                           'hangs out with': FOAF.knows,
+                           'has friend': FOAF.knows,
+                           'works with': FOAF.knows,
+                           'likes': FOAF.knows,
+                           'lives in': FOAF.based_near,
+                           'works for': SCHEMA.worksFor,
+                           'works at': SCHEMA.worksFor,
+                           'employed at': SCHEMA.worksFor}
 
+
+    # create and map graph with predicate substitutions
+    ner_graph = Graph()
+    for phrase in short_phrases:
+        for keyword, predicate in foaf_schema_mapping.items():
+            if keyword in phrase:
+                parts = phrase.split(keyword)
+                subject = parts[0].strip()
+                object = parts[1].strip()
+                subject = URIRef("http://cs7320.Castle.ex/" + subject)
+                object = URIRef("http://cs7320.Castle.ex/" + object)
+                ner_graph.add((subject, predicate, object))
+
+
+    print('done')
     # write_file('entity_data.csv', entity_list)
 
 

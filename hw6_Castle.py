@@ -122,6 +122,8 @@ def create_rdf_graph(short_phrases, foaf_schema_map, my_namespace):
     :return: an RDF Graph Object of entities and relations
     """
     rdf_graph = Graph()
+    rdf_graph.bind("", my_namespace)  # ensure default namespace
+
     for phrase in short_phrases:
         for keyword, predicate in foaf_schema_map.items():
             if keyword in phrase:
@@ -191,7 +193,7 @@ def main():
     # write foaf/schema dict for subs
     schema = Namespace("https://schema.org/")
     foaf = Namespace("http://xmlns.com/foaf/0.1/")
-    my_namespace = Namespace(":")
+    my_namespace = Namespace("http://cs7320.castle")
     print(subs)
     foaf_schema_mapping = {'knows': foaf.knows,
                            'loves': foaf.knows,

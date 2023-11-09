@@ -1,12 +1,8 @@
 import csv
-import filecmp
-
 import nltk
 from nltk.corpus import stopwords
 import re
-# import spacy
-from rdflib import Graph, Literal, URIRef, Namespace
-from rdflib.namespace import FOAF, RDF
+from rdflib import Graph, URIRef, Namespace
 
 
 def read_file(file_name):
@@ -18,6 +14,7 @@ def read_file(file_name):
 
     except FileNotFoundError:
         return []
+
 
 def write_file(file_name, data_source):
     with open (file_name, mode='w', newline='') as csv_file:
@@ -115,6 +112,28 @@ def get_phrase_interest(sent_interest, name_type_pairs):
     return short_phrases, sub_terms
 
 
+def create_rdf_graph(short_phrases, foaf_schema_map, my_namespace):
+    """
+    Accepts a list of short phrases, a map of FOAF/SCHEMA terms, and a
+    custom namespace and puts them in an RDF style graph.
+    :param short_phrases: a list of short strings
+    :param foaf_schema_map: a dictionary of foaf/schema mappings.
+    :param my_namespace: custom default namespace definition.
+    :return: an RDF Graph Object of entities and relations
+    """
+    rdf_graph = Graph()
+    for phrase in short_phrases:
+        for keyword, predicate in foaf_schema_map.items():
+            if keyword in phrase:
+                parts = phrase.split(keyword)
+                subject = parts[0].strip()
+                object = parts[1].strip()
+                subject = URIRef(my_namespace + subject)
+                object = URIRef(my_namespace + object)
+                rdf_graph.add((subject, predicate, object))
+
+    return rdf_graph
+
 
 def main():
     # nltk.download('words')
@@ -158,42 +177,49 @@ def main():
                 name_type_pairs_interest.append(name_type_pairs)
                 entity_interest.append(entity_types)
 
+    # get short phrases and substitutions
     short_phrases, subs = get_phrase_interest(sentences_of_interest,
                                               name_type_pairs_interest)
 
     print(short_phrases)
 
-    # write foaf/schema dict for subs
-    SCHEMA = Namespace("https://schema.org/worksFor")
-    print(subs)
-    foaf_schema_mapping = {'knows': FOAF.knows,
-                           'talks to': FOAF.knows,
-                           'hangs out with': FOAF.knows,
-                           'has friend': FOAF.knows,
-                           'works with': FOAF.knows,
-                           'likes': FOAF.knows,
-                           'lives in': FOAF.based_near,
-                           'works for': SCHEMA.worksFor,
-                           'works at': SCHEMA.worksFor,
-                           'employed at': SCHEMA.worksFor}
+    # write all short phrases to file
+    joined_sps = ('\n'.join(short_phrases))
+    with open ('short_phrases.txt', 'w') as sp_file:
+        sp_file.write(joined_sps)
 
+    # write foaf/schema dict for subs
+    schema = Namespace("https://schema.org/")
+    foaf = Namespace("http://xmlns.com/foaf/0.1/")
+    my_namespace = Namespace(":")
+    print(subs)
+    foaf_schema_mapping = {'knows': foaf.knows,
+                           'loves': foaf.knows,
+                           'talks to': foaf.knows,
+                           'hangs out with': foaf.knows,
+                           'has friend': foaf.knows,
+                           'works with': foaf.knows,
+                           'likes': foaf.knows,
+                           'lives in': foaf.based_near,
+                           'works for': schema.worksFor,
+                           'works at': schema.worksFor,
+                           'is employed at': schema.worksFor}
 
     # create and map graph with predicate substitutions
-    ner_graph = Graph()
-    for phrase in short_phrases:
-        for keyword, predicate in foaf_schema_mapping.items():
-            if keyword in phrase:
-                parts = phrase.split(keyword)
-                subject = parts[0].strip()
-                object = parts[1].strip()
-                subject = URIRef("http://cs7320.Castle.ex/" + subject)
-                object = URIRef("http://cs7320.Castle.ex/" + object)
-                ner_graph.add((subject, predicate, object))
-
+    ner_graph = create_rdf_graph(short_phrases, foaf_schema_mapping,
+                                 my_namespace)
 
     print('done')
-    # write_file('entity_data.csv', entity_list)
 
+    # attempt to serialize our ner_graph
+    n3_data = ner_graph.serialize(format='n3')
+    print('data serialized')
+
+    # write to n3 file
+    with open ('triples.n3', 'w') as output_file:
+        output_file.write(n3_data)
+
+    # write_file('entity_data.csv', entity_list)  # DEBUG
 
 
 main()
